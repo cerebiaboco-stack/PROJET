@@ -2,83 +2,97 @@
 session_start();
 include("includes/config.php");
 $message="";
+
 if(isset($_POST['btn_admin'])){
-    //echo("<script>alert('from admin cliqué')</script>");//
     $email=$_POST['email'];
     $password=$_POST['password'];
     $confirmpassword=$_POST['confirmPassword'];
-    //echo("email :".$email." password :".$password." confirmpassword :".$confirmpassword);//
 
     if ($email=="" || $email==" " || $password==""|| $password==" " || $confirmpassword=="" || $confirmpassword==" ") {
-        $message="<span style='color:red; font-weight:bold;'>Tout les champs sont obligatoires</span>";
-    }else {
+        $message="<span style='color:red; font-weight:bold;'>Tous les champs sont obligatoires</span>";
+    } else {
         $requete=$bdd->prepare('SELECT * FROM `users` WHERE Email=?;');
         $requete->execute(array($email));
 
-            if($requete->rowCount() > 0){
+        if($requete->rowCount() > 0){
+            $message="<span style='color:red; font-weight:bold;'>Cette adresse email est déjà associée à un compte!</span>";
+        } else {
+            if ($password==$confirmpassword) {
+                $type="administrateur";
+                $password_secur=password_hash($password,PASSWORD_DEFAULT);
 
-                $message="<span style='color:red; font-weight:bold;'>Cet adresse mail est déjà associé à un compte!</span>";
-            }else {
-                if ($password==$confirmpassword) {
-                    $type="administrateur";
-                    $password_secur=password_hash($password,PASSWORD_DEFAULT);
-
-                    $requete=$bdd->prepare('INSERT INTO `users`(`IdUsers`, `MotDePasse`, `Role`, `Email`, `DateCreation`) VALUES  (?,?,?,?,NOW());');
-                    $requete->execute(array(0,$password_secur,$type,$email));
-                    if ($requete) {
-                        header("Location: login.php");
-                        
-
-                         }else {
-                             $message="<span style='color:red; font-weight:bold;'>Erreur lors de l'enreigistrement veuillez réessayer!</span>";
-                        }
-                   
-                }else {
-                    $message="<span style='color:red; font-weight:bold;'>Mot de passe incorrecte!</span>";
+                $requete=$bdd->prepare('INSERT INTO `users`(`IdUsers`, `MotDePasse`, `Role`, `Email`, `DateCreation`) VALUES (?,?,?,?,NOW());');
+                $requete->execute(array(0,$password_secur,$type,$email));
+                if ($requete) {
+                    header("Location: login.php");
+                    exit;
+                } else {
+                    $message="<span style='color:red; font-weight:bold;'>Erreur lors de l'enregistrement veuillez réessayer!</span>";
                 }
+            } else {
+                $message="<span style='color:red; font-weight:bold;'>Les mots de passe ne correspondent pas!</span>";
             }
         }
     }
-    
+}
+
 if(isset($_POST['btn_medecin'])){
-    //echo("<script>alert('from admin cliqué')</script>");//
-    $prenom=$_POST['Prenom'];
-    $nom=$_POST['nom'];
-    $email=$_POST['email'];
-    $specialite=$_POST['specialite'];
-    $contact=$_POST['contact'];
-    $password=$_POST['password'];
-    $confirmpassword=$_POST['confirmPassword'];
-    //echo("Prenom: ".$prenom." nom: ".$nom." email :".$email."" specialite :".$specialite."" contact :".$contact." password :".$password." confirmpassword :".$confirmpassword);//
+    $prenom = $_POST['prenom'];
+    $nom = $_POST['nom'];
+    $email = $_POST['email'];
+    $specialite = $_POST['specialite'];
+    $contact_medecin = $_POST['contact_medecin'];
+    $hopital_id = $_POST['hopital_id'];
+    $password = $_POST['password'];
+    $confirmpassword = $_POST['confirmPassword'];
 
-    if ($prenom==""|| $prenom==" "|| $nom=="" || $nom==" " || $email=="" || $email==" " || $specialite=="" || $specialite==" " || $contact=="" || $contact==" " || $password==""|| $password==" " || $confirmpassword=="" || $confirmpassword==" ") {
-            $message="<span style='color:red; font-weight:bold;'>Tout les champs sont obligatoires</span>";
-        }else {
-            $requete=$bdd->prepare('SELECT * FROM `medecin` WHERE  email=?;');
-            $requete->execute(array($email));
+    // Validation des champs
+    if (empty($prenom) || empty($nom) || empty($email) || empty($specialite) || empty($contact_medecin) || empty($hopital_id) || empty($password) || empty($confirmpassword)) {
+        $message = "<span style='color:red; font-weight:bold;'>Tous les champs sont obligatoires</span>";
+    } else {
+        // Vérifier si l'email existe déjà dans users
+        $requete = $bdd->prepare('SELECT * FROM `users` WHERE Email=?;');
+        $requete->execute(array($email));
 
-            if($requete->rowCount() > 0){
+        if($requete->rowCount() > 0) {
+            $message = "<span style='color:red; font-weight:bold;'>Cette adresse email est déjà associée à un compte!</span>";
+        } else {
+            if ($password == $confirmpassword) {
+                $type = "medecin";
+                $password_secur = password_hash($password, PASSWORD_DEFAULT);
 
-                $message="<span style='color:red; font-weight:bold;'>Cet adresse mail est déjà associé à un compte!</span>";
-            }else {
-                if ($password==$confirmpassword) {
-                    $type="medecin";
-                    $password_secur=password_hash($password,PASSWORD_DEFAULT);
+                try {
+                    // Commencer une transaction
+                    $bdd->beginTransaction();
 
-                    $requete=$bdd->prepare('INSERT INTO `medecin`(`IdMedecin`, `IdHopital`, `Nom`, `Specialite`, `Contact`) VALUES (?,?,?,NOW(),?);');
-                    $requete->execute(array(0,$nom,$prenom,$email,$password_secur,$type,1));
-                    if ($requete) {
-                        header("Location: login.php");
+                    // 1. Insérer dans la table medecin
+                    $requete_medecin = $bdd->prepare('INSERT INTO `medecin`(`IdMedecin`, `IdHopital`, `Nom`, `email`, `Specialite`, `Contact`) VALUES (?,?,?,?,?,?);');
+                    $requete_medecin->execute(array(0, $hopital_id, $nom, $email, $specialite, $contact_medecin));
+                    
+                    // Récupérer l'ID du médecin créé
+                    $id_medecin = $bdd->lastInsertId();
 
-                         }else {
-                             $message="<span style='color:red; font-weight:bold;'>Erreur lors de l'enreigistrement veuillez réessayer!</span>";
-                        }
-                   
-                }else {
-                    $message="<span style='color:red; font-weight:bold;'>Mot de passe incorrecte!</span>";
+                    // 2. Insérer dans la table users
+                    $requete_user = $bdd->prepare('INSERT INTO `users`(`IdUsers`, `MotDePasse`, `Role`, `Email`, `DateCreation`, `IdMedecin`) VALUES (?,?,?,?,NOW(),?);');
+                    $requete_user->execute(array(0, $password_secur, $type, $email, $id_medecin));
+
+                    // Valider la transaction
+                    $bdd->commit();
+
+                    header("Location: login.php");
+                    exit;
+
+                } catch (Exception $e) {
+                    // Annuler la transaction en cas d'erreur
+                    $bdd->rollBack();
+                    $message = "<span style='color:red; font-weight:bold;'>Erreur lors de l'enregistrement: " . $e->getMessage() . "</span>";
                 }
+                   
+            } else {
+                $message = "<span style='color:red; font-weight:bold;'>Les mots de passe ne correspondent pas!</span>";
             }
         }
+    }
 }
 ?>
 
@@ -512,12 +526,14 @@ if(isset($_POST['btn_medecin'])){
                                     </div>
                                 </div>
                                 <?php
-                                    echo($message);
+                                    if(!empty($message)) {
+                                        echo '<div class="alert alert-danger mt-3">' . $message . '</div>';
+                                    }
                                 ?>
                             </div>
                             
                             <!-- Formulaire Administrateur -->
-                            <form id="registerFormAdmin" class="role-form active"  method="POST">
+                            <form id="registerFormAdmin" class="role-form active" method="POST">
                                 <input type="hidden" name="role" value="admin">
                                 
                                 <div class="form-group">
@@ -558,21 +574,21 @@ if(isset($_POST['btn_medecin'])){
                             </form>
                             
                             <!-- Formulaire Médecin -->
-                            <form id="registerFormMedecin" class="role-form" action="process_register.php" method="POST">
+                            <form id="registerFormMedecin" class="role-form" method="POST">
                                 <input type="hidden" name="role" value="medecin">
                                 
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="medecin_firstName" class="form-label">Prénom</label>
-                                            <input type="text" class="form-control" id="medecin_firstName" name="firstName" placeholder="Votre prénom" required>
+                                            <input type="text" class="form-control" id="medecin_firstName" name="prenom" placeholder="Votre prénom" required>
                                             <i class="fas fa-user input-icon"></i>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="medecin_lastName" class="form-label">Nom</label>
-                                            <input type="text" class="form-control" id="medecin_lastName" name="lastName" placeholder="Votre nom" required>
+                                            <input type="text" class="form-control" id="medecin_lastName" name="nom" placeholder="Votre nom" required>
                                             <i class="fas fa-user input-icon"></i>
                                         </div>
                                     </div>
@@ -719,7 +735,6 @@ if(isset($_POST['btn_medecin'])){
             
             // Fonction pour mettre à jour le formulaire selon le rôle
             function updateFormForRole(role) {
-                // Mettre à jour tous les formulaires
                 roleForms.forEach(form => {
                     if (form.id === `registerForm${role.charAt(0).toUpperCase() + role.slice(1)}`) {
                         form.classList.add('active');
@@ -744,43 +759,9 @@ if(isset($_POST['btn_medecin'])){
                 });
             });
             
-            // Validation du formulaire administrateur
-            // const adminForm = document.getElementById('registerFormAdmin');
-            // adminForm.addEventListener('submit', function(e) {
-            //     e.preventDefault();
-                
-            //     const email = document.getElementById('admin_email').value;
-            //     const password = document.getElementById('admin_password').value;
-            //     const confirmPassword = document.getElementById('admin_confirmPassword').value;
-            //     const terms = document.getElementById('admin_terms').checked;
-                
-                
-            //     if (!email || !password || !confirmPassword) {
-            //         showAlert('Veuillez remplir tous les champs obligatoires', 'error');
-            //         return;
-            //     }
-                
-            //     if (password !== confirmPassword) {
-            //         showAlert('Les mots de passe ne correspondent pas', 'error');
-            //         return;
-            //     }
-                
-            //     if (!terms) {
-            //         showAlert('Veuillez accepter les conditions d\'utilisation', 'error');
-            //         return;
-            //     }
-                
-                
-            //     showAlert('Création de compte administrateur en cours...', 'info');
-                
-                
-            // });
-            
             // Validation du formulaire médecin
             const medecinForm = document.getElementById('registerFormMedecin');
             medecinForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
                 const firstName = document.getElementById('medecin_firstName').value;
                 const lastName = document.getElementById('medecin_lastName').value;
                 const email = document.getElementById('medecin_email').value;
@@ -793,58 +774,23 @@ if(isset($_POST['btn_medecin'])){
                 
                 // Validation
                 if (!firstName || !lastName || !email || !specialite || !contact || !hopital || !password || !confirmPassword) {
-                    showAlert('Veuillez remplir tous les champs obligatoires', 'error');
+                    e.preventDefault();
+                    alert('Veuillez remplir tous les champs obligatoires');
                     return;
                 }
                 
                 if (password !== confirmPassword) {
-                    showAlert('Les mots de passe ne correspondent pas', 'error');
+                    e.preventDefault();
+                    alert('Les mots de passe ne correspondent pas');
                     return;
                 }
                 
                 if (!terms) {
-                    showAlert('Veuillez accepter les conditions d\'utilisation', 'error');
+                    e.preventDefault();
+                    alert('Veuillez accepter les conditions d\'utilisation');
                     return;
                 }
-                
-                // Simulate registration process
-                showAlert('Création de compte médecin en cours...', 'info');
-                
-                // In a real application, you would make an AJAX request to your server here
-                setTimeout(() => {
-                    showAlert('Compte médecin créé avec succès! Redirection...', 'success');
-                    // Redirect to login page after successful registration
-                    setTimeout(() => {
-                        window.location.href = 'login.php';
-                    }, 1500);
-                }, 1500);
             });
-            
-            function showAlert(message, type) {
-                // Remove any existing alerts
-                const existingAlert = document.querySelector('.alert');
-                if (existingAlert) {
-                    existingAlert.remove();
-                }
-                
-                // Create alert element
-                const alert = document.createElement('div');
-                alert.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
-                alert.innerHTML = `
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                
-                // Insert alert before the forms
-                document.querySelector('.auth-body').insertBefore(alert, document.querySelector('.auth-body').firstChild);
-                
-                // Auto dismiss after 5 seconds
-                setTimeout(() => {
-                    if (alert.parentNode) {
-                        alert.remove();
-                    }
-                }, 5000);
-            }
             
             // Navbar background on scroll
             window.addEventListener('scroll', function() {

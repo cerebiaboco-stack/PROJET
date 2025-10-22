@@ -26,57 +26,36 @@
             $requete_resultat=$requete->fetch(PDO::FETCH_ASSOC);
 
             if ($requete_resultat){
-                            if (password_verify($password,$requete_resultat['MotDePasse'])) {
-                echo "Mot de passe valide<br>";
-                echo "Rôle: " . $requete_resultat['Role'] . "<br>";
-                echo "Email: " . $requete_resultat['Email'] . "<br>";
-                
-                $_SESSION['email']=$requete_resultat['Email'];
-                $_SESSION['role']=$requete_resultat['Role'];  
-                
-                if ($_SESSION['role']=="administrateur") {
-                    echo "Redirection vers admin dashboard<br>";
-                    $_SESSION['user_id']=$requete_resultat['IdUsers'];
-                    // header("Location: /Projet/admin/dashboard.php");
-                    // exit;
+                if (password_verify($password,$requete_resultat['MotDePasse'])) {
+                    $_SESSION['email']=$requete_resultat['Email'];
+                    $_SESSION['role']=$requete_resultat['Role'];  
+                    
+                    if ($_SESSION['role'] == "administrateur") {
+                    $_SESSION['user_id'] = $requete_resultat['IdUsers'];
+                    header("Location: admin/dashboard.php");
+                    exit;
                 } else {
-                    echo "Tentative de connexion médecin<br>";
                     // C'est un médecin
-                    $req = $bdd->prepare('SELECT * FROM users u INNER JOIN medecin m ON u.IdUsers = m.IdUsers WHERE u.Email = ?');
-                    $req->execute(array($_SESSION['email']));
-                    $req_resultat = $req->fetch(PDO::FETCH_ASSOC);
+                        $req = $bdd->prepare('SELECT * FROM users u INNER JOIN medecin m ON u.IdMedecin = m.IdMedecin WHERE u.Email = ?');
+                        $req->execute(array($_SESSION['email']));
+                        $req_resultat = $req->fetch(PDO::FETCH_ASSOC);
                     
                     if ($req_resultat) {
-                        echo "Profil médecin trouvé:<br>";
-                        echo "Nom: " . $req_resultat['Nom'] . "<br>";
-                        echo "Spécialité: " . $req_resultat['Specialite'] . "<br>";
-                        echo "ID Médecin: " . $req_resultat['IdMedecin'] . "<br>";
-                        
                         $_SESSION['user_id'] = $req_resultat['IdUsers'];
                         $_SESSION['role'] = $req_resultat['Role'];
                         $_SESSION['email'] = $req_resultat['Email'];
                         $_SESSION['nom'] = $req_resultat['Nom'];
                         $_SESSION['specialite'] = $req_resultat['Specialite'];
-                        $_SESSION['contact'] = $req_resultat['Contact'];
+                        $_SESSION['contact_medecin'] = $req_resultat['Contact_medecin'];
                         $_SESSION['id_medecin'] = $req_resultat['IdMedecin'];
                         
-                        echo "Redirection vers dashboard médecin<br>";
-                        // header("Location: /Projet/medecin/dashboard.php");
-                        // exit;
-                    } else {2
-                        echo "Profil médecin NON trouvé<br>";
-                        // Afficher les erreurs SQL
-                        echo "Erreur SQL: ";
-                        print_r($req->errorInfo());
-                        echo "<br>";
-                        
+                        header("Location: medecin/dashboard.php");
+                        exit;
+                    } else {
                         session_destroy();
                         $message = "<span style='color:red; font-weight:bold;'>Profil médecin non trouvé!</span>";
                     }
                 }
-                exit; // Temporaire pour voir les messages
-}
-            
                 } else {
                     $message="<span style='color:red; font-weight:bold;'>Mot de passe non valide!</span>";
                 }
@@ -84,7 +63,7 @@
                 $message="<span style='color:red; font-weight:bold;'>Adresse email non valide !</span>";
             }
         }
-    
+    }
 ?>
 
 <!DOCTYPE html>

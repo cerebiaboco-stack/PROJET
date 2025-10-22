@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : mer. 01 oct. 2025 à 16:18
+-- Généré le : mer. 15 oct. 2025 à 19:12
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -34,6 +34,14 @@ CREATE TABLE `banque` (
   `Responsable` varchar(100) DEFAULT NULL,
   `StockTotal` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `banque`
+--
+
+INSERT INTO `banque` (`IdBanque`, `NomBanque`, `Adresse`, `Responsable`, `StockTotal`) VALUES
+(1, 'Banque adjo', 'Cotonou', 'Dr Ayovi', 23),
+(3, 'Banque Ariwo', 'Calavi', 'Dr Adjovi', 45);
 
 -- --------------------------------------------------------
 
@@ -81,6 +89,15 @@ CREATE TABLE `hopital` (
   `Responsable` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Déchargement des données de la table `hopital`
+--
+
+INSERT INTO `hopital` (`IdHopital`, `Nom`, `Adresse`, `Ville`, `Contact`, `Responsable`) VALUES
+(1, 'CNHU', 'Cotonou', 'Cotonou', '41171988', 'Cérébia'),
+(2, 'CHUZ', 'Kowégbo', 'Cotonou', '41171988', 'Dr AZONVI'),
+(3, 'Bon Samaritin', 'Agla', 'Cotonou', '41121557', 'Dr AZOVIWE');
+
 -- --------------------------------------------------------
 
 --
@@ -90,11 +107,18 @@ CREATE TABLE `hopital` (
 CREATE TABLE `medecin` (
   `IdMedecin` int(11) NOT NULL,
   `IdHopital` int(11) NOT NULL,
-  `IdUsers` int(11) NOT NULL,
   `Nom` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL,
   `Specialite` varchar(100) DEFAULT NULL,
   `Contact` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `medecin`
+--
+
+INSERT INTO `medecin` (`IdMedecin`, `IdHopital`, `Nom`, `email`, `Specialite`, `Contact`) VALUES
+(2, 1, 'ertyucvbn', 'dodo@gmail.com', 'azertyu', 'sdfgh');
 
 -- --------------------------------------------------------
 
@@ -136,8 +160,17 @@ CREATE TABLE `users` (
   `MotDePasse` varchar(255) NOT NULL,
   `Role` varchar(50) DEFAULT NULL,
   `Email` varchar(100) DEFAULT NULL,
-  `DateCreation` timestamp NULL DEFAULT NULL
+  `DateCreation` timestamp NULL DEFAULT NULL,
+  `IdMedecin` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `users`
+--
+
+INSERT INTO `users` (`IdUsers`, `MotDePasse`, `Role`, `Email`, `DateCreation`, `IdMedecin`) VALUES
+(26, '$2y$10$1JcO3nHmT.DS7k9iTQPgDenb6lX01AoXI6hjyS1nHXXdkdRVW2Wp6', 'administrateur', 'Cerebiaboco@gmail.com', '2025-10-15 13:13:26', NULL),
+(27, '$2y$10$Y2Z9YKODDl8LnbMK5RmaVeTdbxEEE.e7a1EzYUfXGYu9kMSiws986', 'medecin', 'Freudsergio@gmail.com', '2025-10-15 13:14:53', NULL);
 
 --
 -- Index pour les tables déchargées
@@ -175,8 +208,7 @@ ALTER TABLE `hopital`
 --
 ALTER TABLE `medecin`
   ADD PRIMARY KEY (`IdMedecin`),
-  ADD KEY `fk_banq_hop` (`IdHopital`),
-  ADD KEY `fk_banq_use` (`IdUsers`);
+  ADD KEY `fk_banq_hop` (`IdHopital`);
 
 --
 -- Index pour la table `notifications`
@@ -195,7 +227,8 @@ ALTER TABLE `poche`
 -- Index pour la table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`IdUsers`);
+  ADD PRIMARY KEY (`IdUsers`),
+  ADD KEY `fk_user_medecin` (`IdMedecin`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -205,13 +238,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `banque`
 --
 ALTER TABLE `banque`
-  MODIFY `IdBanque` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `IdBanque` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `cave`
 --
 ALTER TABLE `cave`
-  MODIFY `IdCave` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `IdCave` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `demande`
@@ -223,13 +256,13 @@ ALTER TABLE `demande`
 -- AUTO_INCREMENT pour la table `hopital`
 --
 ALTER TABLE `hopital`
-  MODIFY `IdHopital` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `IdHopital` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `medecin`
 --
 ALTER TABLE `medecin`
-  MODIFY `IdMedecin` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `IdMedecin` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `notifications`
@@ -247,7 +280,7 @@ ALTER TABLE `poche`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `IdUsers` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `IdUsers` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- Contraintes pour les tables déchargées
@@ -270,14 +303,19 @@ ALTER TABLE `demande`
 -- Contraintes pour la table `medecin`
 --
 ALTER TABLE `medecin`
-  ADD CONSTRAINT `fk_banq_hop` FOREIGN KEY (`IdHopital`) REFERENCES `hopital` (`IdHopital`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_banq_use` FOREIGN KEY (`IdUsers`) REFERENCES `users` (`IdUsers`);
+  ADD CONSTRAINT `fk_banq_hop` FOREIGN KEY (`IdHopital`) REFERENCES `hopital` (`IdHopital`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `poche`
 --
 ALTER TABLE `poche`
   ADD CONSTRAINT `poche_ibfk_1` FOREIGN KEY (`IdCave`) REFERENCES `cave` (`IdCave`);
+
+--
+-- Contraintes pour la table `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `fk_user_medecin` FOREIGN KEY (`IdMedecin`) REFERENCES `medecin` (`IdMedecin`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
