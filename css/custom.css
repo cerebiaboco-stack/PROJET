@@ -1,0 +1,42 @@
+/* Styles pour la page d'inscription */
+.auth-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+}
+
+.password-strength {
+    height: 5px;
+    margin-top: 5px;
+    border-radius: 5px;
+}
+
+.strength-weak {
+    background-color: #dc3545;
+    width: 33%;
+}
+
+.strength-medium {
+    background-color: #ffc107;
+    width: 66%;
+}
+
+.strength-strong {
+    background-color: #198754;
+    width: 100%;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Animation pour les messages d'alerte */
+.alert {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
